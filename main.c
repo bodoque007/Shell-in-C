@@ -128,8 +128,8 @@ void shell_loop() {
   const char * path = getenv("PATH");
 
   while (true) {
-    fflush(stdout);
     printf("$ ");
+    fflush(stdout);
     if (fgets(input, sizeof(input), stdin) == NULL) {
       break; // Exit if fgets fails (e.g., EOF)
     }
@@ -144,6 +144,9 @@ void shell_loop() {
       }
     } else if (!strncmp(input, keyword2, keyword_len2)) { // If command is "type"
       char * to_type = input + keyword_len2 + 1;
+      while (*to_type == ' ') {
+        to_type++;
+      }
       if (value_in_array(to_type, BUILTINS, sizeof(BUILTINS) / sizeof(BUILTINS[0]))) {
         printf("%s is a shell builtin\n", to_type);
       } else { // Try looking for command in PATH env variable
@@ -159,9 +162,20 @@ void shell_loop() {
         char cwd[1024];
         getcwd(cwd, sizeof(cwd));
         printf("%s\n", cwd);
+      } else if (!strncmp(input, "cd ", 3)) {
+          char * path_to_change = input + 3;
+          while (*path_to_change == ' ') {
+            path_to_change++;
+          }
+          if (strcmp(path_to_change, "~") == 0) {
+            path_to_change = getenv("HOME");
+          }
+          if (chdir(path_to_change) < 0) {
+            printf("cd: %s: No such file or directory\n", path_to_change);
+          }
       } else { // Try running the command with its corresponding inputs
-      run_command(path, input);
-    }
+          run_command(path, input);
+      }
   }
 }
 
